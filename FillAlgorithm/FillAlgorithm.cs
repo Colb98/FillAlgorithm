@@ -23,5 +23,44 @@ namespace FillAlgorithm
                 }
             }
         }
+
+        // May cause stack-over-flow exception
+        public static void BoundaryFill(Bitmap bitmap, int x, int y, Color color, Color boundColor)
+        {
+            if (x < 0 || x >= bitmap.Width || y < 0 || y >= bitmap.Height)
+                return;
+            Color current = bitmap.GetPixel(x, y);
+            if(current.ToArgb() != boundColor.ToArgb() && current.ToArgb() != color.ToArgb())
+            {
+                bitmap.SetPixel(x, y, color);
+                BoundaryFill(bitmap, x + 1, y, color, boundColor);
+                BoundaryFill(bitmap, x - 1, y, color, boundColor);
+                BoundaryFill(bitmap, x, y + 1, color, boundColor);
+                BoundaryFill(bitmap, x, y - 1, color, boundColor);
+            }
+        }
+
+        // No stack-overflow exception
+        public static void OptimizeBoundaryFill(Bitmap bitmap, int x, int y, Color color, Color boundColor)
+        {
+            List<Point> Stack = new List<Point>();
+            Stack.Add(new Point(x, y));
+            while(Stack.Count > 0)
+            {
+                int xx = Stack[0].X, yy = Stack[0].Y;
+                Stack.RemoveAt(0);
+                if (xx < 0 || yy < 0 || xx >= bitmap.Width || yy >= bitmap.Height)
+                    continue;
+                Color current = bitmap.GetPixel(xx, yy);                
+                if (current.ToArgb() != boundColor.ToArgb() && current.ToArgb() != color.ToArgb())
+                {
+                    bitmap.SetPixel(xx, yy, color);
+                    Stack.Add(new Point(xx + 1, yy));
+                    Stack.Add(new Point(xx - 1, yy));
+                    Stack.Add(new Point(xx, yy + 1));
+                    Stack.Add(new Point(xx, yy - 1));
+                }
+            }
+        }
     }
 }

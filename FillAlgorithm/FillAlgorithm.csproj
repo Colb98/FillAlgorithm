@@ -46,6 +46,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Ellipse.cs" />
     <Compile Include="FillAlgorithm.cs" />
     <Compile Include="interface IFormCanUpdateCanvas.cs" />
     <Compile Include="MainForm.cs">

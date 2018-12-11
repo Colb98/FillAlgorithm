@@ -15,9 +15,13 @@ namespace FillAlgorithm
         Color fill;
         Color stroke;
         Bitmap canvas;
+        Bitmap tempCanvas;
+        Point start, end;
         DrawingTool tool = DrawingTool.None;
         BindingList<Shape> shapes;
+        Shape selectedShape;
         bool bDrawPolygon = false;
+        bool bDrawEllipse = false;
 
         enum DrawingTool
         {
@@ -32,9 +36,14 @@ namespace FillAlgorithm
             fill = Color.White;
             stroke = Color.Black;
             canvas = new Bitmap(drawPanel.Width, drawPanel.Height);
+            tempCanvas = new Bitmap(drawPanel.Width, drawPanel.Height);
             drawPanel.Image = canvas;
             shapes = new BindingList<Shape>();
-            listLayers.DataSource = shapes;            
+            listLayers.DataSource = shapes;
+            algorithmList.DataSource = Enum.GetValues(typeof(Shape.FillMode)).Cast<Shape.FillMode>().ToList();
+            algorithmList.SelectedItem = Shape.FillMode.ScanlineFill;
+            fillColorButton.BackColor = Color.White;
+            strokeColorButton.BackColor = Color.Black;
         }
 
         private void btn_ellipse_Click(object sender, EventArgs e)
@@ -59,9 +68,16 @@ namespace FillAlgorithm
         public void UpdateCanvas()
         {
             canvas = new Bitmap(drawPanel.Width, drawPanel.Height);
-            for (int i = 0; i < shapes.Count; i++)
+            for (int i = shapes.Count - 1; i >= 0; i--)
                 shapes[i].Fill(canvas);
             drawPanel.Image = canvas;
+        }
+
+        public void UpdateTempCanvas(Shape shape)
+        {
+            tempCanvas = new Bitmap(canvas);
+            shape.Draw(Graphics.FromImage(tempCanvas));
+            drawPanel.Image = tempCanvas;
         }
 
         private void drawPanel_MouseDown(object sender, MouseEventArgs e)
@@ -74,10 +90,19 @@ namespace FillAlgorithm
                         KeyPreview = true;
                         bDrawPolygon = true;
                         Polygon polygon = new Polygon(stroke, fill);
-                        shapes.Add(polygon);
+                        shapes.Insert(0, polygon);
                     }
-                    ((Polygon)shapes.Last()).AddPoint(this, e.Location);
+                    ((Polygon)shapes.First()).AddPoint(this, e.Location);
+                    selectedShape = shapes.First();
+                    listLayers.SelectedIndex = 0;
                     
+                    break;
+                case DrawingTool.Ellipse:
+                    if (bDrawEllipse == false)
+                    {
+                        bDrawEllipse = true;
+                        start = e.Location;
+                    }
                     break;
             }
         }
@@ -89,6 +114,76 @@ namespace FillAlgorithm
                 KeyPreview = false;
                 bDrawPolygon = false;
             }                
+        }
+
+        private void drawPanel_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (bDrawEllipse)
+            {
+                end = e.Location;
+                Ellipse tempEllipse = new Ellipse(start, end);
+                UpdateTempCanvas(tempEllipse);
+            }
+        }
+
+        private void algorithmList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if((Shape.FillMode)algorithmList.SelectedItem == Shape.FillMode.BoundaryFill)
+            {
+                if (MessageBox.Show("Has chances to throw Stack overflow exception. Continue?", "Warning", MessageBoxButtons.YesNo) == DialogResult.No)
+                    return;
+                if(MessageBox.Show("Are you sure?", "Warning", MessageBoxButtons.YesNo) == DialogResult.No)
+                    return;
+            }
+            Shape.Mode = (Shape.FillMode)algorithmList.SelectedItem;
+            UpdateCanvas();
+        }
+
+        private void fillColorButton_Click(object sender, EventArgs e)
+        {
+            if (bDrawEllipse || bDrawPolygon)
+                return;
+            ColorDialog colorDialog = new ColorDialog();
+            if (colorDialog.ShowDialog() == DialogResult.OK)
+            {
+                selectedShape.FillColor = colorDialog.Color;
+                fillColorButton.BackColor = colorDialog.Color;
+                UpdateCanvas();
+            }
+        }
+
+        private void strokeColorButton_Click(object sender, EventArgs e)
+        {
+            if (bDrawEllipse || bDrawPolygon)
+                return;
+            ColorDialog colorDialog = new ColorDialog();
+            if(colorDialog.ShowDialog() == DialogResult.OK)
+            {
+                selectedShape.StrokeColor = colorDialog.Color;
+                strokeColorButton.BackColor = colorDialog.Color;
+                UpdateCanvas();
+            }
+        }
+
+        private void listLayers_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            selectedShape = shapes[listLayers.SelectedIndex];
+            strokeColorButton.BackColor = selectedShape.StrokeColor;
+            fillColorButton.BackColor = selectedShape.FillColor;
+        }
+
+        private void drawPanel_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (bDrawEllipse)
+            {
+                bDrawEllipse = false;
+                end = e.Location;
+                Ellipse ellipse = new Ellipse(start, end);
+                shapes.Insert(0, ellipse);
+                UpdateCanvas();
+                selectedShape = ellipse;
+                listLayers.SelectedIndex = 0;
+            }
         }
     }
 }
