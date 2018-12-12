@@ -45,16 +45,16 @@ namespace FillAlgorithm
                 return intersections.ToArray();
             }
                 
-            int a = (int)((BottomRight.X - TopLeft.X) * 1.0 / 2 + 0.5);
-            int b = (int)((BottomRight.Y - TopLeft.Y) * 1.0 / 2 + 0.5);
+            int a = (BottomRight.X - TopLeft.X) / 2;
+            int b = (BottomRight.Y - TopLeft.Y) / 2;
 
-            Point center = new Point((int)((TopLeft.X + BottomRight.X) *1.0 / 2 + 0.5), (int)((TopLeft.Y + BottomRight.Y) * 1.0 / 2 + 0.5));
+            Point center = new Point((TopLeft.X + BottomRight.X) / 2, (TopLeft.Y + BottomRight.Y) / 2);
             int yy = y - center.Y; // Move the ellipse to the origin
             int xx = (int)(a * Math.Sqrt(1 - (yy * yy * 1.0 / (b * b))));
 
             // Move the ellipse back to its position
             intersections.Add(new Point(center.X - xx, y));
-            intersections.Add(new Point(center.X + xx, y));
+            intersections.Add(new Point(center.X + xx + 1, y));
             return intersections.ToArray();
         }
 

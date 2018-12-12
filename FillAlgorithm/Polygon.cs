@@ -95,17 +95,16 @@ namespace FillAlgorithm
                         //nothing vì tính là 2 điểm (để ko tô)
                         ;
                     // Ngược lại skip 1 điểm
-                    // Trường hợp intersection là điểm đầu của đa giác: mảng sẽ chứa 1 intersection ở đầu và ở cuối
-                    // skip bằng cách khác
-                    else if (i != Points.Count - 1)
-                        i++;
                     // Gán X = -1 để bỏ qua luôn
-                    else
+                    else if (intersection.Equals(next))
                         intersection.X = -1;
                 }
 
                 if (intersection.X != -1)
+                {
+                    intersection.X++;
                     intersections.Add(intersection);
+                }
             }
 
 
