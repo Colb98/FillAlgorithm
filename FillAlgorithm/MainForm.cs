@@ -22,6 +22,8 @@ namespace FillAlgorithm
         Shape selectedShape;
         bool bDrawPolygon = false;
         bool bDrawEllipse = false;
+        const int TEST_NUM = 1000;
+        const int HALF_TEST = 500;
 
         enum DrawingTool
         {
@@ -44,6 +46,89 @@ namespace FillAlgorithm
             algorithmList.SelectedItem = Shape.FillMode.ScanlineFill;
             fillColorButton.BackColor = Color.White;
             strokeColorButton.BackColor = Color.Black;
+        }
+
+        private void MeasuringProcess()
+        {
+            // 1000 random objects = 500 ellipse, 500 polygons
+            // Each object = 1 bitmap 
+            String msg = "";
+            List<Shape> testLists = new List<Shape>(TEST_NUM);
+            GenerateTestList(testLists);
+
+            // Set different colors for each test
+            SetTestListColor(testLists, Color.Aqua);
+
+            // Scanline
+            try
+            {                
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                
+                for (int i = 0; i < TEST_NUM; i++)
+                    testLists[i].ScanlineFill(new Bitmap(drawPanel.Width, drawPanel.Height));
+                    
+                watch.Stop();
+                var ellapsedMs = watch.ElapsedMilliseconds;
+                msg += "Scanline : " + ellapsedMs.ToString() + "ms\n";
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Some thing wrong \n" + e.Message);
+            }
+            
+            SetTestListColor(testLists, Color.Azure);
+            // Scanline
+            try
+            {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                for (int i = 0; i < TEST_NUM; i++)
+                    testLists[i].OptimizedBoundaryFill(new Bitmap(drawPanel.Width, drawPanel.Height));
+
+                watch.Stop();
+                var ellapsedMs = watch.ElapsedMilliseconds;
+                msg += "Improved Boundary Fill : " + ellapsedMs.ToString() + "ms\n";
+            }
+            catch(Exception e)
+            {
+                MessageBox.Show("Some thing wrong \n" + e.Message);
+            }
+
+            MessageBox.Show(msg, "Result", MessageBoxButtons.OK);
+        }
+
+        private void SetTestListColor(List<Shape> testLists, Color color)
+        {
+            for (int i = 0; i < testLists.Count; i++)
+                testLists[i].FillColor = color;
+        }
+
+        private void GenerateTestList(List<Shape> testLists)
+        {
+            Random r = new Random();
+            for (int i = 0; i < HALF_TEST; i++)
+            {
+                int[] coord = new int[4];
+                coord[0] = r.Next(5, drawPanel.Width - 5);
+                coord[1] = r.Next(5, drawPanel.Height - 5);
+                coord[2] = r.Next(5, drawPanel.Width - 5);
+                coord[3] = r.Next(5, drawPanel.Height - 5);
+
+                Ellipse e = new Ellipse(new Point(coord[0], coord[1]), new Point(coord[2], coord[3]));
+                testLists.Add(e);
+            }
+
+            for (int i = 0; i < HALF_TEST; i++)
+            {
+                // Số cạnh
+                int n = r.Next(3, 10);
+                Polygon p = new Polygon();
+                for (int j = 0; j < n; j++)
+                {
+                    Point v = new Point(r.Next(5, drawPanel.Width - 5), r.Next(5, drawPanel.Height - 5));
+                    p.AddPointNoUpdate(v);
+                }
+                testLists.Add(p);
+            }
         }
 
         private void btn_ellipse_Click(object sender, EventArgs e)
@@ -170,6 +255,13 @@ namespace FillAlgorithm
             selectedShape = shapes[listLayers.SelectedIndex];
             strokeColorButton.BackColor = selectedShape.StrokeColor;
             fillColorButton.BackColor = selectedShape.FillColor;
+        }
+
+        private void runTestButton_Click(object sender, EventArgs e)
+        {
+            Task task = new Task(MeasuringProcess);
+            task.Start();
+            MessageBox.Show("Please wait until result pop out!");
         }
 
         private void drawPanel_MouseUp(object sender, MouseEventArgs e)

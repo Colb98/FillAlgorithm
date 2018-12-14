@@ -18,6 +18,11 @@ namespace FillAlgorithm
             FillColor = fillColor;
         }
 
+        public Polygon()
+        {
+            Points = new List<Point>();
+        }
+
         public override void Draw(Graphics g)
         {
             if (Points.Count < 3)
@@ -60,6 +65,7 @@ namespace FillAlgorithm
 
         private void GetInsidePixel(out int ax, out int ay)
         {
+            /* 
             // Find a random point "inside" the polygon (assume it only have one simple region)
             // Average X and average Y
             ax = ay = 0;
@@ -70,12 +76,53 @@ namespace FillAlgorithm
             }
             ax /= Points.Count;
             ay /= Points.Count;
+            */
+
+            // Or use a library function to get inside
+            System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
+            path.AddPolygon(Points.ToArray());
+            int n = Points.Count;
+            for(int i=0;i<n; i++)
+            {
+                int x = Points[i].X + Points[(i + 1) % n].X + Points[(i + 2) % n].X;
+                int y = Points[i].Y + Points[(i + 1) % n].Y + Points[(i + 2) % n].Y;
+                x /= 3; y /= 3;
+                if (path.IsVisible(x, y))
+                {
+                    ax = x;
+                    ay = y;
+                    return;
+                }
+            }
+
+            // The function should stop here
+            // If can't find (unlucky) :) brute force all pixel
+            int maxX = GetMaxX();
+            int minX = GetMinX();
+            int maxY = GetMaxY();
+            int minY = GetMinY();
+            for(int x = minX ; x < maxX; x++) 
+                for(int y = minY; y<maxY;y++)
+                    if (path.IsVisible(x, y))
+                    {
+                        ax = x;
+                        ay = y;
+                        return;
+                    }
+
+            // This line will never be called
+            ax = 0; ay = 0;
         }
 
         public void AddPoint(IFormCanUpdateCanvas form, Point point)
         {
             Points.Add(point);
             form.UpdateCanvas();
+        }
+
+        public void AddPointNoUpdate(Point point)
+        {
+            Points.Add(point);
         }
 
         public override Point[] GetIntersections(int y)
